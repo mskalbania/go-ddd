@@ -29,6 +29,8 @@ func (s Service) CompletePurchase(ctx context.Context, purchase Purchase) error 
 		}
 	case payment.CASH:
 		return fmt.Errorf("unsupported operation") //TODO
+	case payment.COFFEEBUX:
+		return fmt.Errorf("unsupported operation") //TODO
 	default:
 		return fmt.Errorf("unexpected payment type")
 	}
