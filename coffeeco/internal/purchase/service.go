@@ -7,12 +7,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/Rhymond/go-money"
 	"github.com/google/uuid"
+	"github.com/govalues/decimal"
 )
 
 type CardChargeService interface {
-	ChargeCard(ctx context.Context, amount money.Money, cardToken string) error
+	ChargeCard(ctx context.Context, amount decimal.Decimal, cardToken string) error
+}
+
+type CashPaymentService interface {
+	PayCash(ctx context.Context, amount decimal.Decimal) error
 }
 
 type Repository interface {
@@ -26,13 +30,15 @@ type Service interface {
 // serviceImpl is the example of domain service that orchestrates the purchase process
 type serviceImpl struct {
 	cardService  CardChargeService
+	cashService  CashPaymentService
 	purchaseRepo Repository
 	storeService store.Service
 }
 
-func NewService(cardService CardChargeService, repository Repository, storeService store.Service) Service {
+func NewService(cardService CardChargeService, cashService CashPaymentService, repository Repository, storeService store.Service) Service {
 	return &serviceImpl{
 		cardService:  cardService,
+		cashService:  cashService,
 		purchaseRepo: repository,
 		storeService: storeService,
 	}
@@ -49,7 +55,10 @@ func (s *serviceImpl) CompletePurchase(ctx context.Context, purchase Purchase, c
 	if err != nil {
 		return fmt.Errorf("err calculating store specific discount: %w", err)
 	}
-	purchase = purchase.ApplyDiscount(discount)
+	purchase, err = purchase.ApplyDiscount(discount)
+	if err != nil {
+		return fmt.Errorf("err applying discount: %w", err)
+	}
 
 	switch purchase.PaymentMeans {
 	case payment.CARD:
@@ -57,7 +66,9 @@ func (s *serviceImpl) CompletePurchase(ctx context.Context, purchase Purchase, c
 			return fmt.Errorf("err charging card: %w", err)
 		}
 	case payment.CASH:
-		return fmt.Errorf("unsupported operation") //TODO
+		if err := s.cashService.PayCash(ctx, purchase.total); err != nil {
+			return fmt.Errorf("err paying cash: %w", err)
+		}
 	case payment.COFFEEBUX:
 		if coffeeBuxCard == nil {
 			return fmt.Errorf("no coffeebux card presented")

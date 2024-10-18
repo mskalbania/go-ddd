@@ -1,6 +1,8 @@
 package coffeeco
 
-import "github.com/Rhymond/go-money"
+import (
+	"github.com/govalues/decimal"
+)
 
 // Product is value object
 // - no identity? if you change the name than it is different product
@@ -8,5 +10,5 @@ import "github.com/Rhymond/go-money"
 // - can be compared only by values
 type Product struct {
 	ItemName  string
-	BasePrice money.Money
+	BasePrice decimal.Decimal
 }

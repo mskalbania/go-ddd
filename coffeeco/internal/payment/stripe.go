@@ -3,7 +3,7 @@ package payment
 import (
 	"context"
 	"fmt"
-	"github.com/Rhymond/go-money"
+	"github.com/govalues/decimal"
 	"github.com/stripe/stripe-go/v73"
 	"github.com/stripe/stripe-go/v73/client"
 )
@@ -25,10 +25,12 @@ func NewStripeService(apiKey string) (*StripeService, error) {
 	return &StripeService{stripeClient: c}, nil
 }
 
-func (s *StripeService) ChargeCard(ctx context.Context, amount money.Money, cardToken string) error {
+func (s *StripeService) ChargeCard(ctx context.Context, amount decimal.Decimal, cardToken string) error {
+	amount, _ = amount.Mul(decimal.MustParse("100"))
+	value, _, _ := amount.Int64(0)
 	params := &stripe.ChargeParams{
-		Amount:   stripe.Int64(amount.Amount()),
-		Currency: stripe.String(amount.Currency().Code),
+		Amount:   &value,
+		Currency: stripe.String(string(stripe.CurrencyUSD)),
 		Source: &stripe.PaymentSourceSourceParams{
 			Token: stripe.String(cardToken),
 		},

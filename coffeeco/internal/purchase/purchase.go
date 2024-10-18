@@ -5,15 +5,15 @@ import (
 	"coffeeco/internal/payment"
 	"coffeeco/internal/store"
 	"fmt"
-	"github.com/Rhymond/go-money"
 	"github.com/google/uuid"
+	"github.com/govalues/decimal"
 	"time"
 )
 
 // Purchase is immutable entity since we are referencing purchases by ID in our domain
 type Purchase struct {
 	id             uuid.UUID
-	total          money.Money
+	total          decimal.Decimal
 	timeOfPurchase time.Time
 
 	Store        store.Store
@@ -27,9 +27,9 @@ func (p Purchase) ValidateAndEnrich() (Purchase, error) {
 	if len(p.Products) == 0 {
 		return Purchase{}, fmt.Errorf("no products to purchase")
 	}
-	total := money.New(0, money.USD)
+	total := decimal.Zero
 	for _, pr := range p.Products {
-		total, _ = total.Add(&pr.BasePrice)
+		total, _ = total.Add(pr.BasePrice)
 	}
 	if total.IsZero() {
 		return Purchase{}, fmt.Errorf("zero total not allowed")
@@ -39,13 +39,21 @@ func (p Purchase) ValidateAndEnrich() (Purchase, error) {
 	}
 	p.id = uuid.New()
 	p.timeOfPurchase = time.Now().UTC()
-	p.total = *total
+	p.total = total
 	return p, nil
 }
 
-func (p Purchase) ApplyDiscount(value float32) Purchase {
+func (p Purchase) ApplyDiscount(value float32) (Purchase, error) {
 	if value > 0 {
-		p.total = *p.total.Multiply(int64(1 - value))
+		multiplier, err := decimal.NewFromFloat64(float64((100 - value) / 100))
+		if err != nil {
+			return Purchase{}, err
+		}
+		discounted, err := p.total.Mul(multiplier)
+		if err != nil {
+			return Purchase{}, err
+		}
+		p.total = discounted
 	}
-	return p
+	return p, nil
 }

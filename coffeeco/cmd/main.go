@@ -7,8 +7,8 @@ import (
 	"coffeeco/internal/purchase"
 	"coffeeco/internal/store"
 	"context"
-	"github.com/Rhymond/go-money"
 	"github.com/google/uuid"
+	"github.com/govalues/decimal"
 	"log"
 )
 
@@ -20,15 +20,16 @@ func main() {
 			ID:                  uuid.MustParse("f47ac10b-58cc-0372-8567-0e02b2c3d479"),
 			Location:            "New York",
 			ProductsForSale:     nil,
-			DiscountForProducts: floatPtr(10.5),
+			DiscountForProducts: floatPtr(50),
 		},
 	})
 	storeService := store.NewService(storeRepository)
 
 	//purchases
 	cardService, _ := payment.NewStripeService("secret-key")
+	cashService := payment.NewNotifyingCashPayment()
 	purchaseRepository := purchase.NewInMemoryRepository(make(map[uuid.UUID]purchase.Purchase))
-	purchaseService := purchase.NewService(cardService, purchaseRepository, storeService)
+	purchaseService := purchase.NewService(cardService, cashService, purchaseRepository, storeService)
 
 	p := purchase.Purchase{
 		Store:        store.Store{ID: uuid.MustParse("f47ac10b-58cc-0372-8567-0e02b2c3d479")},
@@ -36,7 +37,7 @@ func main() {
 		Products: []coffeeco.Product{
 			{
 				ItemName:  "Latte",
-				BasePrice: *money.New(350, money.USD),
+				BasePrice: decimal.MustParse("3.50"),
 			},
 		},
 	}
@@ -52,6 +53,12 @@ func main() {
 	}
 
 	log.Printf("purchase completed successfully, remaining free drinks: %d", l.FreeDrinksAvailable)
+
+	p.PaymentMeans = payment.CASH
+	err = purchaseService.CompletePurchase(context.Background(), p, nil)
+	if err != nil {
+		log.Fatalf("err completing purchase: %v", err)
+	}
 }
 
 func floatPtr(f float32) *float32 {
