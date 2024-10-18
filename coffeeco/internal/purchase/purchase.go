@@ -31,19 +31,21 @@ func (p Purchase) ValidateAndEnrich() (Purchase, error) {
 	for _, pr := range p.Products {
 		total, _ = total.Add(&pr.BasePrice)
 	}
-	if p.total.IsZero() {
+	if total.IsZero() {
 		return Purchase{}, fmt.Errorf("zero total not allowed")
 	}
 	if p.PaymentMeans == payment.CARD && p.CardToken == nil {
 		return Purchase{}, fmt.Errorf("selected card payment but token is nil")
 	}
-	return Purchase{
-		id:             uuid.New(),
-		total:          *total,
-		timeOfPurchase: time.Now().UTC(),
-		Store:          p.Store,
-		PaymentMeans:   p.PaymentMeans,
-		Products:       p.Products,
-		CardToken:      p.CardToken,
-	}, nil
+	p.id = uuid.New()
+	p.timeOfPurchase = time.Now().UTC()
+	p.total = *total
+	return p, nil
+}
+
+func (p Purchase) ApplyDiscount(value float32) Purchase {
+	if value > 0 {
+		p.total = *p.total.Multiply(int64(1 - value))
+	}
+	return p
 }

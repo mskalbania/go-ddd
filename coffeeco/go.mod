@@ -5,6 +5,7 @@ go 1.23
 require (
 	github.com/Rhymond/go-money v1.0.14
 	github.com/google/uuid v1.6.0
+	github.com/stripe/stripe-go/v73 v73.16.0
 	go.mongodb.org/mongo-driver v1.17.1
 )
 
