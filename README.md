@@ -1,4 +1,4 @@
-Some go examples based on Domain-Driven Design with Golang
+## Some go examples based on Domain-Driven Design with Golang
 
 ### 1) CoffeeCo
 
