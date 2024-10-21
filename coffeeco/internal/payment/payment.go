@@ -3,9 +3,10 @@ package payment
 type Means string
 
 const (
-	CARD      = Means("card")
-	CASH      = Means("cash")
-	COFFEEBUX = Means("coffeebux")
+	CARD         = Means("card")
+	CASH         = Means("cash")
+	COFFEEBUX    = Means("coffeebux")
+	SUBSCRIPTION = Means("subscription")
 )
 
 // CardDetails is simplification over cards, assumptions is we will get the token and charge the card associated with it

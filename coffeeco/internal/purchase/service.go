@@ -4,6 +4,7 @@ import (
 	"coffeeco/internal/loyalty"
 	"coffeeco/internal/payment"
 	"coffeeco/internal/store"
+	"coffeeco/internal/subscription"
 	"context"
 	"errors"
 	"fmt"
@@ -24,7 +25,7 @@ type Repository interface {
 }
 
 type Service interface {
-	CompletePurchase(ctx context.Context, purchase Purchase, coffeeBuxCard *loyalty.CoffeeBux) error
+	CompletePurchase(ctx context.Context, purchase Purchase, coffeeBuxCard *loyalty.CoffeeBux, subscription *subscription.Subscription) error
 }
 
 // serviceImpl is the example of domain service that orchestrates the purchase process
@@ -45,7 +46,9 @@ func NewService(cardService CardChargeService, cashService CashPaymentService, r
 }
 
 // CompletePurchase coffeeBuxCard is optional since customer might or might not have loyalty card
-func (s *serviceImpl) CompletePurchase(ctx context.Context, purchase Purchase, coffeeBuxCard *loyalty.CoffeeBux) error {
+func (s *serviceImpl) CompletePurchase(
+	ctx context.Context, purchase Purchase, coffeeBuxCard *loyalty.CoffeeBux, subscription *subscription.Subscription,
+) error {
 	purchase, err := purchase.ValidateAndEnrich()
 	if err != nil {
 		return err
@@ -78,6 +81,15 @@ func (s *serviceImpl) CompletePurchase(ctx context.Context, purchase Purchase, c
 			return fmt.Errorf("err paying with coffeebux: %w", err)
 		}
 		*coffeeBuxCard = updatedCard
+	case payment.SUBSCRIPTION:
+		if subscription == nil {
+			return fmt.Errorf("no subscription presented")
+		}
+		updatedSub, err := subscription.Pay(purchase.Products)
+		if err != nil {
+			return fmt.Errorf("err paying with subscription: %w", err)
+		}
+		*subscription = updatedSub
 	default:
 		return fmt.Errorf("unexpected payment type")
 	}
