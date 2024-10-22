@@ -1,6 +1,15 @@
 ## Some go examples based on Domain-Driven Design with Golang
+https://www.oreilly.com/library/view/domain-driven-design-with/9781804613450/
 
-### 1) CoffeeCo
+### 1) Recommendation Service
+
+_Approach to build microservices with DDD principles._
+
+*Context outline:*
+
+### 2) CoffeeCo
+
+_Approach to build monolithic-like application with DDD principles._
 
 *Context outline:*
 
